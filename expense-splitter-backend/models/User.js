@@ -8,51 +8,41 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
+      trim: true,
     },
-
     phone: {
       type: String,
-      required: true, // for OTP and notifications
+      default: "",
+      trim: true,
     },
-
     password: {
       type: String,
       required: true,
+      minlength: 6,
     },
-
-    // OTP for password recovery
     otp: {
       type: Number,
     },
-
     otpExpires: {
       type: Date,
     },
-
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
-  { timestamps: true } // adds createdAt and updatedAt automatically
+  { timestamps: true }
 );
 
-// 🔒 Encrypt password before saving
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function hashPassword(next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// 🔑 Match password
-userSchema.methods.matchPassword = async function (password) {
-  return await bcrypt.compare(password, this.password);
+userSchema.methods.matchPassword = function matchPassword(password) {
+  return bcrypt.compare(password, this.password);
 };
 
 export default mongoose.model("User", userSchema);
